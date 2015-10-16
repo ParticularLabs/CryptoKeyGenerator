@@ -1,4 +1,8 @@
 ﻿using System;
+using System.CodeDom;
+using System.CodeDom.Compiler;
+using System.IO;
+using System.Linq;
 using System.Security;
 using System.Security.Cryptography;
 using System.Text;
@@ -15,13 +19,35 @@ namespace CryptoKeyGenerator
 
             byte[] key;
 
-            if (args.Length == 0)
+            bool strip8bit = args.Contains("-7");
+            bool stripControl = args.Contains("-s"); ;
+
+            Console.WriteLine("Strip 8th bit: {0}", strip8bit);
+            Console.WriteLine("Strip control: {0}", stripControl);
+
+
+            if (args.Length == 0 || args.Last().StartsWith("-"))
             {
                 key = GenerateKey();
             }
             else
             {
-                key = AsciiEx.GetBytes(args[0]);
+                var input = args.Last();
+                Console.WriteLine("Input: {0}", input);
+                key = Encoding.ASCII.GetBytes(input);
+            }
+
+            for (int i = 0; i < key.Length; i++)
+            {
+                var x = key[i];
+
+                if (strip8bit)
+                    x = (byte)(x & 0x7F);
+
+                if (stripControl)
+                    x = (byte)(x < 33 ? x + (byte)33 : x);
+
+                key[i] = x;
             }
 
             WL(key);
